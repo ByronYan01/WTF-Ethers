@@ -4,7 +4,7 @@ import * as contractJson from "./contract.json" assert {type: "json"};
 
 // 1. 生成merkle tree
 console.log("\n1. 生成merkle tree")
-// 白名单地址
+// 白名单地址 --- 指定的账户地址
 const tokens = [
     "0x5B38Da6a701c568545dCfcB03FcB875f56beddC4", 
     "0xAb8483F64d9C6d1EcF9b849Ae677dD3315835cb2",
@@ -57,25 +57,46 @@ const main = async () => {
 
     // 如果钱包ETH足够
     if(ethers.formatEther(balanceETH) > 0.002){
-        // 4. 利用contractFactory部署NFT合约
-        console.log("\n2. 利用contractFactory部署NFT合约")
-        // 部署合约，填入constructor的参数
-        const contractNFT = await factoryNFT.deploy("WTF Merkle Tree", "WTF", root)
-        console.log(`合约地址: ${contractNFT.target}`);
-        console.log("等待合约部署上链")
-        await contractNFT.waitForDeployment()
-        // 也可以用 contractNFT.deployTransaction.wait()
-        console.log("合约已上链")
+      // 4. 利用contractFactory部署NFT合约
+      console.log("\n2. 利用contractFactory部署NFT合约");
+      // 部署合约，填入constructor的参数
+      const contractNFT = await factoryNFT.deploy(
+        "WTF Merkle Tree",
+        "WTF",
+        root
+      );
+      console.log(`合约地址: ${contractNFT.target}`);
+      console.log("等待合约部署上链");
+      await contractNFT.waitForDeployment();
+      // 也可以用 contractNFT.deployTransaction.wait()
+      console.log("合约已上链");
 
-        // 5. 调用mint()函数，利用merkle tree验证白名单，给第0个地址铸造NFT
-        console.log("\n3. 调用mint()函数，利用merkle tree验证白名单，给第一个地址铸造NFT")
-        console.log(`NFT名称: ${await contractNFT.name()}`)
-        console.log(`NFT代号: ${await contractNFT.symbol()}`)
-        let tx = await contractNFT.mint(tokens[0], "0", proof)
-        console.log("铸造中，等待交易上链")
-        await tx.wait()
-        console.log(`mint成功，地址${tokens[0]} 的NFT余额: ${await contractNFT.balanceOf(tokens[0])}\n`)
+      /**
+       * 用于生产环境
+         在生产环境使用Merkle Tree验证白名单发行NFT主要有以下步骤：
 
+          确定白名单列表。
+          在后端生成白名单列表的Merkle Tree。
+          部署NFT合约，并将Merkle Tree的root保存在合约中。
+          用户铸造时，向后端请求地址对应的proof。
+          用户调用mint()函数进行铸造NFT。
+       */
+      
+
+      // 5. 调用mint()函数，利用merkle tree验证白名单，给第0个地址铸造NFT
+      console.log(
+        "\n3. 调用mint()函数，利用merkle tree验证白名单，给第一个地址铸造NFT"
+      );
+      console.log(`NFT名称: ${await contractNFT.name()}`);
+      console.log(`NFT代号: ${await contractNFT.symbol()}`);
+      let tx = await contractNFT.mint(tokens[0], "0", proof);
+      console.log("铸造中，等待交易上链");
+      await tx.wait();
+      console.log(
+        `mint成功，地址${tokens[0]} 的NFT余额: ${await contractNFT.balanceOf(
+          tokens[0]
+        )}\n`
+      );
     }else{
         // 如果ETH不足
         console.log("ETH不足，去水龙头领一些Goerli ETH")
