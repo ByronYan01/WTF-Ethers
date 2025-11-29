@@ -3,7 +3,7 @@
 //    在服务器保管signer钱包的私钥-公钥对
 // -> 在服务器记录allowlist（白名单地址）和tokenId，并生成对应的msgHash，
 // -> 用signer钱包给msgHash签名
-// -> 部署NFT合约，初始化时signer的公钥保存在合约中。
+// -> 部署NFT合约，初始化时signer的公钥保存在合约中。（其实不是公钥，是签名的账户地址）
 // -> 用户mint时填地址和tokenId，并向服务器请求签名。
 // -> 调用合约的mint()函数进行铸造
 
@@ -58,25 +58,35 @@ const main = async () => {
 
     // 如果钱包ETH足够
     if(ethers.formatEther(balanceETH) > 0.002){
-        // 4. 利用contractFactory部署NFT合约
-        console.log("\n2. 利用contractFactory部署NFT合约")
-        // 部署合约，填入constructor的参数
-        const contractNFT = await factoryNFT.deploy("WTF Signature", "WTF", wallet.address)
-        console.log(`合约地址: ${contractNFT.target}`);
-        console.log("等待合约部署上链")
-        await contractNFT.waitForDeployment()
-        // 也可以用 contractNFT.deployTransaction.wait()
-        console.log("合约已上链")
+      // 4. 利用contractFactory部署NFT合约
+      console.log("\n2. 利用contractFactory部署NFT合约");
+      // 部署合约，填入constructor的参数
+      const contractNFT = await factoryNFT.deploy(
+        "WTF Signature",
+        "WTF",
+        wallet.address
+      );
+      console.log(`合约地址: ${contractNFT.target}`);
+      console.log("等待合约部署上链");
+      await contractNFT.waitForDeployment();
+      // 也可以用 contractNFT.deployTransaction.wait()
+      console.log("合约已上链");
 
-        // 5. 调用mint()函数，利用签名验证白名单，给account地址铸造NFT
-        console.log("\n3. 调用mint()函数，利用签名验证白名单，给第一个地址铸造NFT")
-        console.log(`NFT名称: ${await contractNFT.name()}`)
-        console.log(`NFT代号: ${await contractNFT.symbol()}`)
-        let tx = await contractNFT.mint(account, tokenId, signature)
-        console.log("铸造中，等待交易上链")
-        await tx.wait()
-        console.log(`mint成功，地址${account} 的NFT余额: ${await contractNFT.balanceOf(account)}\n`)
-
+      // 5. 调用mint()函数，利用签名验证白名单，给account地址铸造NFT
+      console.log(
+        "\n3. 调用mint()函数，利用签名验证白名单，给第一个地址铸造NFT"
+      );
+      console.log(`NFT名称: ${await contractNFT.name()}`);
+      console.log(`NFT代号: ${await contractNFT.symbol()}`);
+      // 内部校验时：给定一个消息哈希和签名，可以通过数学算法恢复出签名时使用的公钥对应的地址
+      let tx = await contractNFT.mint(account, tokenId, signature);
+      console.log("铸造中，等待交易上链");
+      await tx.wait();
+      console.log(
+        `mint成功，地址${account} 的NFT余额: ${await contractNFT.balanceOf(
+          account
+        )}\n`
+      );
     }else{
         // 如果ETH不足
         console.log("ETH不足，去水龙头领一些Goerli ETH")
